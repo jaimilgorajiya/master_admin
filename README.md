@@ -387,9 +387,3 @@ When creating a client, the system can call the external software’s registrati
 - Email and database credentials should always be stored in `.env` files and **never committed to version control**.
 
 ---
-
-## License
-
-MIT
-
----
