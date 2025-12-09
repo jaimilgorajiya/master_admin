@@ -35,7 +35,7 @@ const EditSoftware = ({ software, onBack, onSuccess }) => {
     try {
       const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
       const response = await axios.put(
-        `http://localhost:5000/api/software/update/${software._id}`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/software/update/${software._id}`,
         formData,
         {
           headers: {

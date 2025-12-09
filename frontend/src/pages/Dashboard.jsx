@@ -35,12 +35,12 @@ const Dashboard = () => {
       const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
       
       // Fetch software count
-      const softwareResponse = await axios.get("http://localhost:5000/api/software/all", {
+      const softwareResponse = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/software/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
       // Fetch clients count
-      const clientsResponse = await axios.get("http://localhost:5000/api/client/all", {
+      const clientsResponse = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/client/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

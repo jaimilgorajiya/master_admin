@@ -23,7 +23,7 @@ const AddClient = ({ onBack, onSuccess }) => {
   const fetchSoftware = async () => {
     try {
       const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
-      const response = await axios.get("http://localhost:5000/api/software/all", {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/software/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -120,7 +120,7 @@ const AddClient = ({ onBack, onSuccess }) => {
       };
 
       const response = await axios.post(
-        "http://localhost:5000/api/client/create",
+        `${import.meta.env.VITE_API_BASE_URL}/api/client/create`,
         submitData,
         {
           headers: {

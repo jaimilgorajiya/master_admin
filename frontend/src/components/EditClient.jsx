@@ -27,7 +27,7 @@ const EditClient = ({ client, onBack, onSuccess }) => {
   const fetchSoftware = async () => {
     try {
       const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
-      const response = await axios.get("http://localhost:5000/api/software/all", {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/software/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -54,7 +54,7 @@ const EditClient = ({ client, onBack, onSuccess }) => {
     try {
       const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
       const response = await axios.put(
-        `http://localhost:5000/api/client/update/${client._id}`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/client/update/${client._id}`,
         formData,
         {
           headers: {

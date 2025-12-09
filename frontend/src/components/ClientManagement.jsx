@@ -27,7 +27,7 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
-      const response = await axios.get("http://localhost:5000/api/client/all", {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/client/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -89,7 +89,7 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
     try {
       const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
       const response = await axios.patch(
-        `http://localhost:5000/api/client/toggle-status/${id}`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/client/toggle-status/${id}`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -147,7 +147,7 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
     try {
       const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
       const response = await axios.delete(
-        `http://localhost:5000/api/client/delete/${id}`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/client/delete/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

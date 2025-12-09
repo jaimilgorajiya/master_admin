@@ -25,7 +25,7 @@ const AddSoftware = ({ onBack, onSuccess }) => {
     try {
       const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
       const response = await axios.post(
-        "http://localhost:5000/api/software/add",
+        `${import.meta.env.VITE_API_BASE_URL}/api/software/add`,
         formData,
         {
           headers: {
