@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
+import Swal from "sweetalert2";
 import toast from "react-hot-toast";
 import SoftwareManagement from "../components/SoftwareManagement";
 import ClientManagement from "../components/ClientManagement";
@@ -8,7 +9,8 @@ import { StatsSkeleton } from "../components/LoadingSkeleton";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [activeMenu, setActiveMenu] = useState("dashboard");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeMenu, setActiveMenu] = useState(searchParams.get("tab") || "dashboard");
   const [showAddForm, setShowAddForm] = useState(false);
   const [stats, setStats] = useState({
     totalSoftware: 0,
@@ -28,6 +30,14 @@ const Dashboard = () => {
       fetchStats();
     }
   }, [navigate]);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab") || "dashboard";
+    if (tab !== activeMenu) {
+      setActiveMenu(tab);
+      setShowAddForm(false);
+    }
+  }, [searchParams, activeMenu]);
 
   const fetchStats = async () => {
     setLoadingStats(true);
@@ -62,7 +72,27 @@ const Dashboard = () => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: "Logout?",
+      text: "Are you sure you want to log out?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#00c8ff",
+      cancelButtonColor: "#666666",
+      confirmButtonText: "Yes, logout",
+      cancelButtonText: "Cancel",
+      background: "#1a1a1a",
+      color: "#ffffff",
+      customClass: {
+        popup: "swal-dark",
+        confirmButton: "swal-btn-confirm",
+        cancelButton: "swal-btn-cancel",
+      },
+    });
+
+    if (!result.isConfirmed) return;
+
     // Remove tokens
     localStorage.removeItem("adminToken");
     sessionStorage.removeItem("adminToken");
@@ -72,14 +102,20 @@ const Dashboard = () => {
 
   const menuItems = [
     { id: "dashboard", label: "Dashboard" },
-    { id: "software", label: "Software Management" },
-    { id: "clients", label: "Client Management" },
+    { id: "clients", label: "Clients" },
+    { id: "software", label: "Softwares" },
   ];
 
   const handleMenuChange = (menuId) => {
     if (activeMenu !== menuId) {
       setActiveMenu(menuId);
-      setShowAddForm(false); // Reset form state when changing menus
+      setShowAddForm(false);
+
+      if (menuId === "dashboard") {
+        setSearchParams({});
+      } else {
+        setSearchParams({ tab: menuId });
+      }
     }
   };
 
@@ -99,7 +135,7 @@ const Dashboard = () => {
               <circle cx="12" cy="7" r="4" />
             </svg>
           </button>
-          <button className="icon-button" onClick={handleLogout} title="Logout">
+          <button className="icon-button-red" onClick={handleLogout} title="Logout">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
               <polyline points="16 17 21 12 16 7" />
@@ -172,10 +208,13 @@ const Dashboard = () => {
               <h1 className="page-title">Dashboard</h1>
               
               {loadingStats ? (
-                <StatsSkeleton />
+              <StatsSkeleton />
               ) : (
                 <div className="stats-grid">
-                <div className="stat-card">
+                <div
+                  className="stat-card"
+                  onClick={() => handleMenuChange("software")}
+                >
                   <div className="stat-icon">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
                       <polyline points="16 18 22 12 16 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -187,7 +226,10 @@ const Dashboard = () => {
                     <div className="stat-label">Total Software</div>
                   </div>
                 </div>
-                <div className="stat-card">
+                <div
+                  className="stat-card"
+                  onClick={() => handleMenuChange("clients")}
+                >
                   <div className="stat-icon">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
                       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -200,7 +242,10 @@ const Dashboard = () => {
                     <div className="stat-label">Total Clients</div>
                   </div>
                 </div>
-                <div className="stat-card">
+                <div
+                  className="stat-card"
+                  onClick={() => handleMenuChange("clients")}
+                >
                   <div className="stat-icon">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
                       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>

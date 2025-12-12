@@ -6,6 +6,9 @@ const EditSoftware = ({ software, onBack, onSuccess }) => {
     name: "",
     description: "",
     backendRegisterApiLink: "",
+    getAllAdminsApiLink: "",
+    deleteAdminApiLink: "",
+    updateStatusApiLink: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,7 +18,10 @@ const EditSoftware = ({ software, onBack, onSuccess }) => {
       setFormData({
         name: software.name,
         description: software.description,
-        backendRegisterApiLink: software.backendRegisterApiLink,
+        backendRegisterApiLink: software.backendRegisterApiLink || "",
+        getAllAdminsApiLink: software.getAllAdminsApiLink || "",
+        deleteAdminApiLink: software.deleteAdminApiLink || "",
+        updateStatusApiLink: software.updateStatusApiLink || "",
       });
     }
   }, [software]);
@@ -101,7 +107,7 @@ const EditSoftware = ({ software, onBack, onSuccess }) => {
 
             <div className="form-group">
               <label htmlFor="backendRegisterApiLink">
-                Backend Register API Link <span className="required">*</span>
+                Register API Link <span className="required">*</span>
               </label>
               <input
                 type="url"
@@ -113,7 +119,61 @@ const EditSoftware = ({ software, onBack, onSuccess }) => {
                 required
               />
               <small className="input-hint">
-                This API endpoint will be used to register new clients for this software
+                <strong>Required:</strong> API endpoint to register new clients. Expects: name, email, password, phone
+              </small>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="getAllAdminsApiLink">
+                Get All Clients API Link <span className="required">*</span>
+              </label>
+              <input
+                type="url"
+                id="getAllAdminsApiLink"
+                name="getAllAdminsApiLink"
+                value={formData.getAllAdminsApiLink}
+                onChange={handleChange}
+                placeholder="https://api.example.com/api/admin/all"
+                required
+              />
+              <small className="input-hint">
+                <strong>Required:</strong> API endpoint to fetch all existing clients (needed for status updates & deletion)
+              </small>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="deleteAdminApiLink">
+                Delete Client API Link <span className="required">*</span>
+              </label>
+              <input
+                type="url"
+                id="deleteAdminApiLink"
+                name="deleteAdminApiLink"
+                value={formData.deleteAdminApiLink}
+                onChange={handleChange}
+                placeholder="https://api.example.com/api/admin/delete/:id"
+                required
+              />
+              <small className="input-hint">
+                <strong>Required:</strong> API endpoint to delete clients. Use :id placeholder for dynamic ID (e.g., /api/admin/delete/:id)
+              </small>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="updateStatusApiLink">
+                Update Status API Link <span className="required">*</span>
+              </label>
+              <input
+                type="url"
+                id="updateStatusApiLink"
+                name="updateStatusApiLink"
+                value={formData.updateStatusApiLink}
+                onChange={handleChange}
+                placeholder="https://api.example.com/api/admin/status/:id"
+                required
+              />
+              <small className="input-hint">
+                <strong>Required:</strong> API endpoint to update client status. Use :id placeholder for dynamic ID. Expects: &#123;status: 'active'/'inactive'&#125;
               </small>
             </div>
 

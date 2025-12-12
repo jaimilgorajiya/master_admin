@@ -131,12 +131,32 @@ const AddClient = ({ onBack, onSuccess }) => {
       );
 
       if (response.data.success) {
-        onSuccess("Client added successfully!");
+        // Show detailed success message based on registration status
+        let successMessage = "Client added successfully!";
+        if (response.data.warning) {
+          successMessage += ` Warning: ${response.data.warning}`;
+        }
+        
+        onSuccess(successMessage);
         setFormData({ clientName: "", clientEmail: "", clientPhone: "", softwareId: "" });
         setValidationErrors({ email: "", phone: "" });
+        
+        // Log detailed response for debugging
+        console.log("Client creation response:", response.data);
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to add client");
+      console.error("Client creation error:", err);
+      console.error("Error response:", err.response?.data);
+      
+      let errorMessage = "Failed to add client";
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+      if (err.response?.data?.apiError) {
+        errorMessage += ` (API Error: ${err.response.data.apiError})`;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -158,7 +178,7 @@ const AddClient = ({ onBack, onSuccess }) => {
 
             <div className="form-group">
               <label htmlFor="clientName">
-                Client Name <span className="required">*</span>
+                Client <span className="required">*</span>
               </label>
               <input
                 type="text"

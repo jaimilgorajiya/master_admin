@@ -62,6 +62,8 @@ const SoftwareManagement = ({ initialShowAddForm = false, onFormClose }) => {
     setShowEditForm(true);
   };
 
+
+
   const handleDelete = async (id, name) => {
     const result = await Swal.fire({
       title: "Are you sure?",
@@ -164,7 +166,6 @@ const SoftwareManagement = ({ initialShowAddForm = false, onFormClose }) => {
                 <tr>
                   <th>Name</th>
                   <th>Description</th>
-                  <th>API Link</th>
                   <th>Created At</th>
                   <th>Actions</th>
                 </tr>
@@ -172,7 +173,7 @@ const SoftwareManagement = ({ initialShowAddForm = false, onFormClose }) => {
               <tbody>
                 {softwareList.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="no-data">
+                    <td colSpan="4" className="no-data">
                       No software found. Add your first software to get started.
                     </td>
                   </tr>
@@ -181,7 +182,6 @@ const SoftwareManagement = ({ initialShowAddForm = false, onFormClose }) => {
                     <tr key={software._id}>
                       <td className="font-semibold">{software.name}</td>
                       <td>{software.description}</td>
-                      <td className="text-small">{software.backendRegisterApiLink}</td>
                       <td>{new Date(software.createdAt).toLocaleDateString()}</td>
                       <td>
                         <button

@@ -8,10 +8,12 @@ import { TableSkeleton } from "./LoadingSkeleton";
 
 const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
   const [clientList, setClientList] = useState([]);
+  const [filteredClients, setFilteredClients] = useState([]);
   const [showAddForm, setShowAddForm] = useState(initialShowAddForm);
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [selectedClient, setSelectedClient] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSoftware, setSelectedSoftware] = useState("");
+  const [softwareList, setSoftwareList] = useState([]);
 
   useEffect(() => {
     if (initialShowAddForm) {
@@ -21,7 +23,64 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
 
   useEffect(() => {
     fetchClients();
+    fetchSoftware();
   }, []);
+
+  useEffect(() => {
+    filterClients();
+  }, [clientList, searchTerm, selectedSoftware]);
+
+  const fetchSoftware = async () => {
+    try {
+      const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/software/all`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.data.success) {
+        setSoftwareList(response.data.softwareList);
+      }
+    } catch (err) {
+      console.error("Error fetching software:", err);
+    }
+  };
+
+  const filterClients = () => {
+    let filtered = [...clientList];
+
+    // Filter by search term
+    if (searchTerm.trim() !== "") {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(client => 
+        client.clientName.toLowerCase().includes(searchLower) ||
+        client.clientEmail.toLowerCase().includes(searchLower) ||
+        client.clientPhone.toLowerCase().includes(searchLower) ||
+        (client.softwareId?.name && client.softwareId.name.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Filter by software
+    if (selectedSoftware !== "") {
+      filtered = filtered.filter(client => 
+        client.softwareId?._id === selectedSoftware
+      );
+    }
+
+    setFilteredClients(filtered);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleSoftwareFilterChange = (e) => {
+    setSelectedSoftware(e.target.value);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedSoftware("");
+  };
 
   const fetchClients = async () => {
     setLoading(true);
@@ -33,6 +92,12 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
 
       if (response.data.success) {
         setClientList(response.data.clients);
+        setFilteredClients(response.data.clients);
+        
+        // Log summary for debugging
+        if (response.data.summary) {
+          console.log("Client Summary:", response.data.summary);
+        }
       }
     } catch (err) {
       console.error("Error fetching clients:", err);
@@ -49,18 +114,7 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
     fetchClients();
   };
 
-  const handleEditSuccess = (message) => {
-    toast.success(message);
-    setShowEditForm(false);
-    setSelectedClient(null);
-    if (onFormClose) onFormClose();
-    fetchClients();
-  };
 
-  const handleEdit = (client) => {
-    setSelectedClient(client);
-    setShowEditForm(true);
-  };
 
   const handleToggleStatus = async (id, currentStatus, clientName) => {
     const action = currentStatus ? "deactivate" : "activate";
@@ -113,6 +167,84 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
       Swal.fire({
         title: "Error!",
         text: err.response?.data?.message || "Failed to toggle client status",
+        icon: "error",
+        confirmButtonColor: "#00c8ff",
+        background: "#1a1a1a",
+        color: "#ffffff",
+      });
+    }
+  };
+
+  const handleDeleteExternal = async (client) => {
+    const result = await Swal.fire({
+      title: "Delete External Client?",
+      html: `
+        <div style="text-align: left;">
+          <p>You are about to delete <strong>"${client.clientName}"</strong> from <strong>${client.softwareId?.name}</strong>.</p>
+          <p><strong>⚠️ Important:</strong></p>
+          <ul style="margin-left: 20px;">
+            <li>This will delete the client from the external software</li>
+            <li>The client will no longer be able to login</li>
+            <li>This action cannot be undone</li>
+          </ul>
+        </div>
+      `,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#666666",
+      confirmButtonText: "Yes, delete from external software!",
+      cancelButtonText: "Cancel",
+      background: "#1a1a1a",
+      color: "#ffffff",
+      width: 500,
+      customClass: {
+        popup: "swal-dark",
+        confirmButton: "swal-btn-confirm",
+        cancelButton: "swal-btn-cancel",
+      },
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
+      
+      // Create a payload for external client deletion
+      const deletePayload = {
+        clientEmail: client.clientEmail,
+        softwareId: client.softwareId._id,
+        externalId: client.externalId,
+        isExternal: true
+      };
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/api/client/delete-external`,
+        deletePayload,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.success) {
+        await Swal.fire({
+          title: "Deleted!",
+          text: "External client has been deleted successfully.",
+          icon: "success",
+          confirmButtonColor: "#00c8ff",
+          background: "#1a1a1a",
+          color: "#ffffff",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+        fetchClients();
+      }
+    } catch (err) {
+      Swal.fire({
+        title: "Error!",
+        text: err.response?.data?.message || "Failed to delete external client",
         icon: "error",
         confirmButtonColor: "#00c8ff",
         background: "#1a1a1a",
@@ -192,19 +324,7 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
     );
   }
 
-  if (showEditForm && selectedClient) {
-    return (
-      <EditClient
-        client={selectedClient}
-        onBack={() => {
-          setShowEditForm(false);
-          setSelectedClient(null);
-          if (onFormClose) onFormClose();
-        }}
-        onSuccess={handleEditSuccess}
-      />
-    );
-  }
+
 
   return (
     <div>
@@ -214,6 +334,55 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
           + Add Client
         </button>
       </div>
+
+      {/* Search and Filter Section */}
+      <div className="search-filter-section">
+        <div className="search-box">
+          <input
+            type="text"
+            placeholder="Search by name, email, phone, or software..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className="search-input"
+          />
+          <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+            <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2"/>
+          </svg>
+        </div>
+        
+        <div className="filter-section">
+          <select
+            value={selectedSoftware}
+            onChange={handleSoftwareFilterChange}
+            className="filter-select"
+          >
+            <option value="">All Software</option>
+            {softwareList.map((software) => (
+              <option key={software._id} value={software._id}>
+                {software.name}
+              </option>
+            ))}
+          </select>
+          
+          {(searchTerm || selectedSoftware) && (
+            <button onClick={clearFilters} className="clear-filters-btn">
+              Clear Filters
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Results Summary */}
+      {(searchTerm || selectedSoftware) && (
+        <div className="results-summary">
+          Showing {filteredClients.length} of {clientList.length} clients
+          {searchTerm && <span> matching "{searchTerm}"</span>}
+          {selectedSoftware && (
+            <span> in {softwareList.find(s => s._id === selectedSoftware)?.name}</span>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <TableSkeleton rows={5} columns={7} />
@@ -228,19 +397,23 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
               <th>Phone</th>
               <th>Software</th>
               <th>Status</th>
+              <th>Registration</th>
               <th>Created At</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {clientList.length === 0 ? (
+            {filteredClients.length === 0 ? (
               <tr>
-                <td colSpan="7" className="no-data">
-                  No clients found. Add your first client to get started.
+                <td colSpan="8" className="no-data">
+                  {clientList.length === 0 
+                    ? "No clients found. Add your first client to get started."
+                    : "No clients match your search criteria."
+                  }
                 </td>
               </tr>
             ) : (
-              clientList.map((client) => (
+              filteredClients.map((client) => (
                 <tr key={client._id}>
                   <td className="font-semibold">{client.clientName}</td>
                   <td>{client.clientEmail}</td>
@@ -256,21 +429,20 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
                       <span className="toggle-slider"></span>
                     </label>
                   </td>
+                  <td>
+                    <span className={`status-badge ${client.registrationStatus}`}>
+                      {client.registrationStatus === 'success' && '✅ Success'}
+                      {client.registrationStatus === 'failed' && '❌ Failed'}
+                      {client.registrationStatus === 'pending' && '⏳ Pending'}
+                      {client.registrationStatus === 'skipped' && '⚠️ Skipped'}
+                      {client.registrationStatus === 'already_exists' && '⚠️ Exists'}
+                    </span>
+                  </td>
                   <td>{new Date(client.createdAt).toLocaleDateString()}</td>
                   <td>
                     <button
-                      className="btn-icon btn-edit"
-                      onClick={() => handleEdit(client)}
-                      title="Edit"
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-                    <button
                       className="btn-icon btn-delete"
-                      onClick={() => handleDelete(client._id, client.clientName)}
+                      onClick={() => client.source === 'external' ? handleDeleteExternal(client) : handleDelete(client._id, client.clientName)}
                       title="Delete"
                     >
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
