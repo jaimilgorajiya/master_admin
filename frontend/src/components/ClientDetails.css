@@ -1,0 +1,187 @@
+/* ========================================
+   CLIENT DETAILS PAGE (Pro Clean SaaS)
+   ======================================== */
+
+.client-details-page {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Status Badges (Pill Style) --- */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+.status-badge::before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: currentColor;
+    flex-shrink: 0;
+    transform: translateY(-0.5px); /* Subtly lift dot to match text optical center */
+}
+
+/* Active / Success */
+.status-badge.active,
+.status-badge.success {
+    background-color: rgba(52, 199, 89, 0.1);
+    color: #34c759;
+    border: 1px solid rgba(52, 199, 89, 0.2);
+}
+
+/* Inactive / Failed / Expired */
+.status-badge.inactive, 
+.status-badge.failed, 
+.status-badge.expired {
+    background-color: rgba(255, 59, 48, 0.1);
+    color: #ff3b30;
+    border: 1px solid rgba(255, 59, 48, 0.2);
+}
+
+/* Pending / Warning */
+.status-badge.pending,
+.status-badge.warning {
+    background-color: rgba(255, 149, 0, 0.1);
+    color: #ff9500;
+    border: 1px solid rgba(255, 149, 0, 0.2);
+}
+
+/* Neutral / Plan Badge (No dot for plan usually, but we keep consistent style or override) */
+.plan-badge {
+    background-color: rgba(255, 255, 255, 0.08); /* White-ish transparent */
+    color: #e5e5e5;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+/* --- Layout Grid --- */
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 Columns by default */
+    gap: 32px; /* Generous spacing */
+    margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+    .details-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .details-grid {
+        grid-template-columns: 1fr; /* Stack on mobile */
+        gap: 24px;
+    }
+}
+
+/* --- Info Groups --- */
+.detail-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Spacing between label and value */
+}
+
+.detail-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-secondary); /* Muted gray */
+    font-weight: 600;
+}
+
+.detail-value {
+    font-size: 16px;
+    color: var(--text-primary); /* High contrast white */
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.detail-value.mono {
+    font-family: 'SF Mono', 'Roboto Mono', Menlo, monospace;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.detail-value.highlight {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* --- Card Styles (Override/Specific) --- */
+.pro-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    margin-bottom: 40px; /* Space before table */
+}
+
+/* --- Section Headers --- */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 4px;
+    /* border-bottom: 1px solid var(--border-color); Removed to avoid double lines */
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* --- Table Specifics --- */
+.history-table td {
+    vertical-align: middle;
+}
+
+.amount-text {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+}
+
+.currency-symbol {
+    color: var(--text-tertiary);
+    font-weight: 400;
+    margin-right: 2px;
+}
+
+.date-text {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.duration-text {
+    color: var(--text-secondary);
+    font-size: 13px;
+}

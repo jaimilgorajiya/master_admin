@@ -4,16 +4,21 @@ import Swal from "sweetalert2";
 import toast from "react-hot-toast";
 import AddClient from "./AddClient";
 import EditClient from "./EditClient";
+import ClientDetails from "./ClientDetails";
 import { TableSkeleton } from "./LoadingSkeleton";
 
 const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
   const [clientList, setClientList] = useState([]);
   const [filteredClients, setFilteredClients] = useState([]);
   const [showAddForm, setShowAddForm] = useState(initialShowAddForm);
+  const [selectedClient, setSelectedClient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSoftware, setSelectedSoftware] = useState("");
+  const [selectedService, setSelectedService] = useState("");
   const [softwareList, setSoftwareList] = useState([]);
+  const [serviceList, setServiceList] = useState([]);
+  const [activeTab, setActiveTab] = useState("software"); // 'software' | 'service'
 
   useEffect(() => {
     if (initialShowAddForm) {
@@ -24,11 +29,12 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
   useEffect(() => {
     fetchClients();
     fetchSoftware();
+    fetchServices();
   }, []);
 
   useEffect(() => {
     filterClients();
-  }, [clientList, searchTerm, selectedSoftware]);
+  }, [clientList, searchTerm, selectedSoftware, selectedService, activeTab]);
 
   const fetchSoftware = async () => {
     try {
@@ -45,8 +51,32 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
     }
   };
 
+  const fetchServices = async () => {
+    try {
+        const token = localStorage.getItem("adminToken");
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/service/all`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if(res.data.success) {
+            setServiceList(res.data.services);
+        }
+    } catch (error) {
+        console.error("Fetch services error", error);
+    }
+  };
+
   const filterClients = () => {
     let filtered = [...clientList];
+
+    // Filter by Active Tab (Client Type)
+    // Note: Legacy clients might not have clientType 'software' explicitly set if migrated, 
+    // but default in schema handles it for new fetches. 
+    // For safety, assume if clientType is missing or 'software', it's software.
+    // If clientType is 'service', it's service.
+    filtered = filtered.filter(client => {
+        const type = client.clientType || 'software';
+        return type === activeTab;
+    });
 
     // Filter by search term
     if (searchTerm.trim() !== "") {
@@ -55,15 +85,23 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
         client.clientName.toLowerCase().includes(searchLower) ||
         client.clientEmail.toLowerCase().includes(searchLower) ||
         client.clientPhone.toLowerCase().includes(searchLower) ||
-        (client.softwareId?.name && client.softwareId.name.toLowerCase().includes(searchLower))
+        (client.softwareId?.name && client.softwareId.name.toLowerCase().includes(searchLower)) ||
+        (client.serviceIds && client.serviceIds.some(s => s.name.toLowerCase().includes(searchLower)))
       );
     }
 
-    // Filter by software
-    if (selectedSoftware !== "") {
+    // Filter by software (only in software mode)
+    if (activeTab === 'software' && selectedSoftware !== "") {
       filtered = filtered.filter(client => 
         client.softwareId?._id === selectedSoftware
       );
+    }
+
+    // Filter by service (only in service mode)
+    if (activeTab === 'service' && selectedService !== "") {
+        filtered = filtered.filter(client => 
+            client.serviceIds?.some(s => s._id === selectedService)
+        );
     }
 
     setFilteredClients(filtered);
@@ -77,9 +115,14 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
     setSelectedSoftware(e.target.value);
   };
 
+  const handleServiceFilterChange = (e) => {
+      setSelectedService(e.target.value);
+  };
+
   const clearFilters = () => {
     setSearchTerm("");
     setSelectedSoftware("");
+    setSelectedService("");
   };
 
   const fetchClients = async () => {
@@ -92,7 +135,7 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
 
       if (response.data.success) {
         setClientList(response.data.clients);
-        setFilteredClients(response.data.clients);
+        // filterClients will run via useEffect
         
         // Log summary for debugging
         if (response.data.summary) {
@@ -320,7 +363,17 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
           if (onFormClose) onFormClose();
         }}
         onSuccess={handleAddSuccess}
+        initialClientType={activeTab}
       />
+    );
+  }
+
+  if (selectedClient) {
+    return (
+        <ClientDetails 
+            client={selectedClient} 
+            onBack={() => setSelectedClient(null)} 
+        />
     );
   }
 
@@ -331,8 +384,46 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
       <div className="page-header">
         <h1 className="page-title">Client Management</h1>
         <button className="btn-primary" onClick={() => setShowAddForm(true)}>
-          + Add Client
+          + Add New Client
         </button>
+      </div>
+
+      {/* Toggle Tabs */}
+      <div className="tabs-container" style={{ display: 'flex', gap: '1rem', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '0' }}>
+            <button 
+                className={`tab-btn ${activeTab === 'software' ? 'active' : ''}`}
+                onClick={() => setActiveTab('software')}
+                style={{
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: activeTab === 'software' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                    color: activeTab === 'software' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                    padding: '10px 20px',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '16px',
+                    transition: 'all 0.3s ease'
+                }}
+            >
+                Software
+            </button>
+            <button 
+                className={`tab-btn ${activeTab === 'service' ? 'active' : ''}`}
+                onClick={() => setActiveTab('service')}
+                style={{
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: activeTab === 'service' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                    color: activeTab === 'service' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                    padding: '10px 20px',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '16px',
+                    transition: 'all 0.3s ease'
+                }}
+            >
+                Service 
+            </button>
       </div>
 
       {/* Search and Filter Section */}
@@ -340,7 +431,7 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
         <div className="search-box">
           <input
             type="text"
-            placeholder="Search by name, email, phone, or software..."
+            placeholder="Search by name, email, phone..."
             value={searchTerm}
             onChange={handleSearchChange}
             className="search-input"
@@ -352,20 +443,36 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
         </div>
         
         <div className="filter-section">
-          <select
-            value={selectedSoftware}
-            onChange={handleSoftwareFilterChange}
-            className="filter-select"
-          >
-            <option value="">All Software</option>
-            {softwareList.map((software) => (
-              <option key={software._id} value={software._id}>
-                {software.name}
-              </option>
-            ))}
-          </select>
+          {activeTab === 'software' ? (
+                <select
+                    value={selectedSoftware}
+                    onChange={handleSoftwareFilterChange}
+                    className="filter-select"
+                >
+                    <option value="">All Software</option>
+                    {softwareList.map((software) => (
+                    <option key={software._id} value={software._id}>
+                        {software.name}
+                    </option>
+                    ))}
+                </select>
+          ) : (
+                <select
+                    value={selectedService}
+                    onChange={handleServiceFilterChange}
+                    className="filter-select"
+                >
+                    <option value="">All Services</option>
+                    {serviceList.map((service) => (
+                    <option key={service._id} value={service._id}>
+                        {service.name}
+                    </option>
+                    ))}
+                </select>
+          )}
+
           
-          {(searchTerm || selectedSoftware) && (
+          {(searchTerm || selectedSoftware || selectedService) && (
             <button onClick={clearFilters} className="clear-filters-btn">
               Clear Filters
             </button>
@@ -374,12 +481,15 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
       </div>
 
       {/* Results Summary */}
-      {(searchTerm || selectedSoftware) && (
+      {(searchTerm || selectedSoftware || selectedService) && (
         <div className="results-summary">
-          Showing {filteredClients.length} of {clientList.length} clients
+          Showing {filteredClients.length} of {clientList.filter(c => (c.clientType || 'software') === activeTab).length} clients
           {searchTerm && <span> matching "{searchTerm}"</span>}
-          {selectedSoftware && (
+          {activeTab === 'software' && selectedSoftware && (
             <span> in {softwareList.find(s => s._id === selectedSoftware)?.name}</span>
+          )}
+          {activeTab === 'service' && selectedService && (
+            <span> with service {serviceList.find(s => s._id === selectedService)?.name}</span>
           )}
         </div>
       )}
@@ -395,9 +505,9 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
               <th>Name</th>
               <th>Email</th>
               <th>Phone</th>
-              <th>Software</th>
+              <th>{activeTab === 'software' ? 'Software' : 'Services'}</th>
               <th>Status</th>
-              <th>Registration</th>
+              <th>Account Status</th>
               <th>Created At</th>
               <th>Actions</th>
             </tr>
@@ -406,8 +516,8 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
             {filteredClients.length === 0 ? (
               <tr>
                 <td colSpan="8" className="no-data">
-                  {clientList.length === 0 
-                    ? "No clients found. Add your first client to get started."
+                  {clientList.filter(c => (c.clientType || 'software') === activeTab).length === 0 
+                    ? `No ${activeTab} clients found. Add your first client.`
                     : "No clients match your search criteria."
                   }
                 </td>
@@ -415,10 +525,31 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
             ) : (
               filteredClients.map((client) => (
                 <tr key={client._id}>
-                  <td className="font-semibold">{client.clientName}</td>
+                  <td 
+                      className="font-semibold" 
+                      style={{ cursor: 'pointer', color: '#00c8ff' }}
+                      onClick={() => setSelectedClient(client)}
+                  >
+                      {client.clientName}
+                  </td>
                   <td>{client.clientEmail}</td>
                   <td>{client.clientPhone}</td>
-                  <td>{client.softwareId?.name || "N/A"}</td>
+                  <td>
+                      {activeTab === 'software' ? (
+                          client.softwareId?.name || "N/A"
+                      ) : (
+                          client.serviceIds && client.serviceIds.length > 0 
+                            ? (
+                                <div title={client.serviceIds.map(s => s.name).join(', ')}>
+                                    {client.serviceIds.length === 1 
+                                        ? client.serviceIds[0].name 
+                                        : `${client.serviceIds.length} Services`
+                                    }
+                                </div>
+                            )
+                            : "No Services"
+                      )}
+                  </td>
                   <td>
                     <label className="toggle-switch">
                       <input
@@ -430,12 +561,23 @@ const ClientManagement = ({ initialShowAddForm = false, onFormClose }) => {
                     </label>
                   </td>
                   <td>
-                    <span className={`status-badge ${client.registrationStatus}`}>
-                      {client.registrationStatus === 'success' && '✅ Success'}
-                      {client.registrationStatus === 'failed' && '❌ Failed'}
-                      {client.registrationStatus === 'pending' && '⏳ Pending'}
-                      {client.registrationStatus === 'skipped' && '⚠️ Skipped'}
-                      {client.registrationStatus === 'already_exists' && '⚠️ Exists'}
+                    <span 
+                        className="status-badge"
+                        style={{
+                            backgroundColor: client.isActive ? 'rgba(74, 222, 128, 0.1)' : 'rgba(248, 113, 113, 0.1)',
+                            color: client.isActive ? '#4ade80' : '#f87171',
+                            border: `1px solid ${client.isActive ? 'rgba(74, 222, 128, 0.2)' : 'rgba(248, 113, 113, 0.2)'}`,
+                            padding: '4px 12px',
+                            borderRadius: '20px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                        }}
+                    >
+                       
+                      {client.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td>{new Date(client.createdAt).toLocaleDateString()}</td>

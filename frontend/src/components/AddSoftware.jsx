@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 const AddSoftware = ({ onBack, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -23,6 +24,39 @@ const AddSoftware = ({ onBack, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    const result = await Swal.fire({
+      title: "Confirm Software Creation",
+      html: `
+        <div style="text-align: left; font-size: 0.9em; line-height: 1.5;">
+          <p style="margin-bottom: 5px;"><strong>Name:</strong> ${formData.name}</p>
+          <hr style="border-color: #444; margin: 10px 0;">
+          <p style="margin-bottom: 5px; color: #aaa; font-size: 0.85em;">API Configuration:</p>
+          <div style="background: #222; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 0.8em; word-break: break-all;">
+            <p style="margin-bottom: 8px;"><strong style="color: #00c8ff;">Register:</strong><br/>${formData.backendRegisterApiLink}</p>
+            <p style="margin-bottom: 8px;"><strong style="color: #00c8ff;">Get All:</strong><br/>${formData.getAllAdminsApiLink}</p>
+            <p style="margin-bottom: 8px;"><strong style="color: #00c8ff;">Delete:</strong><br/>${formData.deleteAdminApiLink}</p>
+            <p style="margin: 0;"><strong style="color: #00c8ff;">Update:</strong><br/>${formData.updateStatusApiLink}</p>
+          </div>
+        </div>
+      `,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Add Software",
+      cancelButtonText: "Cancel",
+      background: "#1a1a1a",
+      color: "#ffffff",
+      confirmButtonColor: "#28a745",
+      cancelButtonColor: "#666666",
+      customClass: {
+        popup: "swal-dark",
+      },
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -39,6 +73,16 @@ const AddSoftware = ({ onBack, onSuccess }) => {
       );
 
       if (response.data.success) {
+        await Swal.fire({
+            title: "Success!",
+            text: "Software added successfully!",
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false,
+            background: "#1a1a1a",
+            color: "#ffffff"
+        });
+
         onSuccess("Software added successfully!");
         setFormData({ 
           name: "", 
@@ -50,7 +94,17 @@ const AddSoftware = ({ onBack, onSuccess }) => {
         });
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to add software");
+      const errorMessage = err.response?.data?.message || "Failed to add software";
+      setError(errorMessage);
+      
+      Swal.fire({
+          title: "Error!",
+          text: errorMessage,
+          icon: "error",
+          confirmButtonColor: "#00c8ff",
+          background: "#1a1a1a",
+          color: "#ffffff"
+      });
     } finally {
       setLoading(false);
     }
@@ -121,8 +175,8 @@ const AddSoftware = ({ onBack, onSuccess }) => {
           <div className="form-group">
             <label htmlFor="getAllAdminsApiLink">
               Get API Link <span className="required">*</span>
-            </label>
-            <input
+              </label>
+              <input
               type="url"
               id="getAllAdminsApiLink"
               name="getAllAdminsApiLink"
@@ -188,3 +242,4 @@ const AddSoftware = ({ onBack, onSuccess }) => {
 };
 
 export default AddSoftware;
+
